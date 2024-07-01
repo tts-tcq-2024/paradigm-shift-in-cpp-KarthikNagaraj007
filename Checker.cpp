@@ -2,9 +2,13 @@
 #include <iostream>
 using namespace std;
 
+void outputMessage(const std::string& message) {
+    cout << message << "\n";
+}
+
 bool isTemperatureOk(float temperature) {
   if(temperature < 0 || temperature > 45) {
-    cout << "Temperature out of range!\n";
+    outputMessage("Temperature out of range!");
     return false;
   }
   return true;
@@ -12,7 +16,7 @@ bool isTemperatureOk(float temperature) {
 
 bool isSocOk(float soc) {
   if(soc < 20 || soc > 80) {
-    cout << "State of Charge out of range!\n";
+    outputMessage("State of Charge out of range!");
     return false;
   }
   return true;
@@ -20,7 +24,7 @@ bool isSocOk(float soc) {
 
 bool isChargeRateOk(float chargeRate) {
   if(chargeRate > 0.8) {
-    cout << "Charge Rate out of range!\n";
+    outputMessage("Charge Rate out of range!");
     return false;
   }
   return true;
