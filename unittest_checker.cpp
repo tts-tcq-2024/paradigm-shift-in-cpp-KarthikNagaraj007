@@ -17,7 +17,7 @@ MockOutput* mockOutput;
 
 // mock function
 void outputMessages(const std::string& message) {
-    mockOutput->outputMessage(message);
+    mockOutput->outputMessages(message);
 }
 
 // Test fixture class
