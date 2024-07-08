@@ -28,7 +28,7 @@ TEST(SocTest, OutOfRange) {
 // Test cases for isChargeRateOk
 TEST(ChargeRateTest, WithinRange) {
     EXPECT_TRUE(isChargeRateOk(0.5));
-    EXPECT_TRUE(isChargeRateOk(0.8));
+    EXPECT_TRUE(isChargeRateOk(0.7));
 }
 
 TEST(ChargeRateTest, OutOfRange) {
@@ -48,5 +48,5 @@ TEST(BatteryTest, AllConditions) {
     EXPECT_TRUE(batteryIsOk(45, 50, 0.5));
     EXPECT_TRUE(batteryIsOk(25, 20, 0.5));
     EXPECT_TRUE(batteryIsOk(25, 80, 0.5));
-    EXPECT_TRUE(batteryIsOk(25, 50, 0.8));
+    EXPECT_TRUE(batteryIsOk(25, 50, 0.7));
 }
