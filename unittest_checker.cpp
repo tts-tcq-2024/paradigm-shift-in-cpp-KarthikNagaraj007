@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <iostream>
+#include "Checker.h"
 using namespace std;
 using ::testing::_;
 using ::testing::Invoke;
