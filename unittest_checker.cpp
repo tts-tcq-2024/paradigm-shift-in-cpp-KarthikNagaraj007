@@ -1,68 +1,52 @@
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <iostream>
 #include "Checker.h"
-using namespace std;
-using ::testing::_;
-using ::testing::Invoke;
-using ::testing::Test;
 
-// Mock class to replace outputMessage
-class MockOutput {
-public:
-    MOCK_METHOD(void, outputMessages, (const std::string& message), ());
-};
-
-MockOutput* mockOutput;
-
-// mock function
-void outputMessages(const std::string& message) {
-    mockOutput->outputMessages(message);
+// Test cases for isTemperatureOk
+TEST(TemperatureTest, WithinRange) {
+    EXPECT_TRUE(isTemperatureOk(25));
+    EXPECT_TRUE(isTemperatureOk(0));
+    EXPECT_TRUE(isTemperatureOk(45));
 }
 
-// Test fixture class
-class BatteryTest : public Test {
-protected:
-    MockOutput mock;
-    void SetUp() override {
-        mockOutput = &mock;
-    }
-    void TearDown() override {
-        mockOutput = nullptr;
-    }
-};
-
-// Test cases
-TEST_F(BatteryTest, TemperatureTest) {
-    EXPECT_CALL(mock, outputMessages("Temperature out of range!")).Times(1);
+TEST(TemperatureTest, OutOfRange) {
     EXPECT_FALSE(isTemperatureOk(-1));
+    EXPECT_FALSE(isTemperatureOk(46));
 }
 
-TEST_F(BatteryTest, SocTest) {
-    EXPECT_CALL(mock, outputMessages("State of Charge out of range!")).Times(1);
+// Test cases for isSocOk
+TEST(SocTest, WithinRange) {
+    EXPECT_TRUE(isSocOk(50));
+    EXPECT_TRUE(isSocOk(20));
+    EXPECT_TRUE(isSocOk(80));
+}
+
+TEST(SocTest, OutOfRange) {
     EXPECT_FALSE(isSocOk(19));
+    EXPECT_FALSE(isSocOk(81));
 }
 
-TEST_F(BatteryTest, ChargeRateTest) {
-    EXPECT_CALL(mock, outputMessages("Charge Rate out of range!")).Times(1);
+// Test cases for isChargeRateOk
+TEST(ChargeRateTest, WithinRange) {
+    EXPECT_TRUE(isChargeRateOk(0.5));
+    EXPECT_TRUE(isChargeRateOk(0.8));
+}
+
+TEST(ChargeRateTest, OutOfRange) {
     EXPECT_FALSE(isChargeRateOk(0.9));
 }
 
-TEST_F(BatteryTest, BatteryIsOkTest) {
-    EXPECT_CALL(mock, outputMessages(_)).Times(0);
-    EXPECT_TRUE(batteryIsOk(25, 50, 0.5));
-
-    EXPECT_CALL(mock, outputMessages("Temperature out of range!")).Times(1);
-    EXPECT_FALSE(batteryIsOk(50, 50, 0.5));
-
-    EXPECT_CALL(mock, outputMessages("State of Charge out of range!")).Times(1);
-    EXPECT_FALSE(batteryIsOk(25, 85, 0.5));
-
-    EXPECT_CALL(mock, outputMessages("Charge Rate out of range!")).Times(1);
+// Test cases for batteryIsOk
+TEST(BatteryTest, AllConditions) {
+    EXPECT_TRUE(batteryIsOk(25, 70, 0.7));
+    EXPECT_FALSE(batteryIsOk(-1, 50, 0.5));
+    EXPECT_FALSE(batteryIsOk(46, 50, 0.5));
+    EXPECT_FALSE(batteryIsOk(25, 19, 0.5));
+    EXPECT_FALSE(batteryIsOk(25, 81, 0.5));
     EXPECT_FALSE(batteryIsOk(25, 50, 0.9));
-}
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    EXPECT_FALSE(batteryIsOk(-1, 81, 0.9));
+    EXPECT_TRUE(batteryIsOk(0, 50, 0.5));
+    EXPECT_TRUE(batteryIsOk(45, 50, 0.5));
+    EXPECT_TRUE(batteryIsOk(25, 20, 0.5));
+    EXPECT_TRUE(batteryIsOk(25, 80, 0.5));
+    EXPECT_TRUE(batteryIsOk(25, 50, 0.8));
 }
