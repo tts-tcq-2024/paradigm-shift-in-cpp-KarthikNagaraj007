@@ -34,7 +34,7 @@ protected:
 
 // Test cases
 TEST_F(BatteryTest, TemperatureTest) {
-    EXPECT_CALL(mock, outputMessags("Temperature out of range!")).Times(1);
+    EXPECT_CALL(mock, outputMessages("Temperature out of range!")).Times(1);
     EXPECT_FALSE(isTemperatureOk(-1));
 }
 
