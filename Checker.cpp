@@ -1,99 +1,92 @@
 #include "Checker.h"
-#include <assert.h>
 #include <iostream>
 
-// Constructor to initialize the battery messages and default language
-Battery::Battery() {
-    parameterErrorMessages = {
-        {BatteryParameter::TEMPERATURE, "Temperature out of range!\n"},
-        {BatteryParameter::SOC, "State of Charge out of range!\n"},
-        {BatteryParameter::CHARGE_RATE, "Charge Rate out of range!\n"}
-    };
-
-    parameterWarningMessages = {
-        {BatteryParameter::TEMPERATURE, "Warning: Temperature approaching limit!\n"},
-        {BatteryParameter::SOC, "Warning: State of Charge approaching limit!\n"},
-        {BatteryParameter::CHARGE_RATE, "Warning: Charge Rate approaching limit!\n"}
-    };
-
-    parameterErrorMessagesGerman = {
-        {BatteryParameter::TEMPERATURE, "Temperatur außerhalb des Bereichs!\n"},
-        {BatteryParameter::SOC, "Ladezustand außerhalb des Bereichs!\n"},
-        {BatteryParameter::CHARGE_RATE, "Ladegeschwindigkeit außerhalb des Bereichs!\n"}
-    };
-
-    parameterWarningMessagesGerman = {
-        {BatteryParameter::TEMPERATURE, "Warnung: Temperatur nähert sich dem Limit!\n"},
-        {BatteryParameter::SOC, "Warnung: Ladezustand nähert sich dem Limit!\n"},
-        {BatteryParameter::CHARGE_RATE, "Warnung: Ladegeschwindigkeit nähert sich dem Limit!\n"}
-    };
-
-    language = "English";
+WarningStatus getWarningStatus(float value, const ParameterRange& range) {
+    if (value < range.lowWarning) {
+        return WarningStatus::LOW_WARNING;
+    }
+    if (value >= range.highWarning) {
+        return WarningStatus::HIGH_WARNING;
+    }
+    return WarningStatus::NO_WARNING; // Normal if not in any warning range
 }
 
-// Function to print an error message for a specific parameter
-void Battery::printErrorMessage(BatteryParameter parameter) {
-    if (language == "German") {
-        std::cout << parameterErrorMessagesGerman[parameter];
-    } else {
-        std::cout << parameterErrorMessages[parameter];
+BreachStatus getBreachStatus(float value, const ParameterRange& range) {
+    if (value < range.lowBreach) {
+        return BreachStatus::LOW_BREACH;
+    }
+    if (value >= range.highBreach) {
+        return BreachStatus::HIGH_BREACH;
+    }
+    return BreachStatus::NO_BREACH; // Not in breach
+}
+
+std::string getBreachMessage(const std::string& parameter, BreachStatus breachStatus) {
+    switch (breachStatus) {
+        case BreachStatus::LOW_BREACH:
+            return parameter + " is below the safe range!";
+        case BreachStatus::HIGH_BREACH:
+            return parameter + " is above the safe range!";
+        default:
+            return "";
     }
 }
 
-// Function to check if a value is within the specified limits for a parameter
-bool Battery::isWithinLimits(float value, BatteryLimits limits, BatteryParameter parameter) {
-    bool isOutOfRange = value < limits.min || value > limits.max;
-    if (isOutOfRange) {
-        printErrorMessage(parameter);
-    }
-    return !isOutOfRange;
-}
-
-// Function to print a warning message for a specific parameter
-void Battery::printWarningMessage(BatteryParameter parameter) {
-    if (language == "German") {
-        std::cout << parameterWarningMessagesGerman[parameter];
-    } else {
-        std::cout << parameterWarningMessages[parameter];
+std::string getWarningMessage(const std::string& parameter, WarningStatus warningStatus) {
+    switch (warningStatus) {
+        case WarningStatus::LOW_WARNING:
+            return "Warning: " + parameter + " is approaching discharge.";
+        case WarningStatus::HIGH_WARNING:
+            return "Warning: " + parameter + " is approaching charge-peak.";
+        default:
+            return "";
     }
 }
 
-// Function to check if a value is within the specified warning limits for a parameter
-bool Battery::isWithinWarningLimits(float value, BatteryWarningLimits limits, BatteryParameter parameter) {
-    bool isOutOfRange = value < limits.min || value > limits.max;
-    if (isOutOfRange) {
-        printWarningMessage(parameter);
+std::string statusToMessageTranslation(const std::string& parameter, BreachStatus breachStatus, WarningStatus warningStatus) {
+    std::string message = getWarningMessage(parameter, warningStatus);
+    if (message.empty()) {
+        message = getBreachMessage(parameter, breachStatus);
     }
-    return !isOutOfRange;
+    if (message.empty()) {
+        message = parameter + " is normal.";
+    }
+    return message;
 }
 
-// Function to check if the battery parameters are within acceptable limits and warning limits
-bool Battery::batteryIsOk(float temperature, float soc, float chargeRate) {
-    const BatteryLimits temperatureLimits{0, 45};
-    const BatteryLimits socLimits{20, 80};
-    const BatteryLimits chargeRateLimits{0, 0.8};
-
-    const BatteryWarningLimits temperatureWarningLimits{24, 76};
-    const BatteryWarningLimits socWarningLimits{24, 76};
-    const BatteryWarningLimits chargeRateWarningLimits{0.04, 0.76};
-
-    bool isTemperatureOk = checkParameter(temperature, temperatureLimits, temperatureWarningLimits, BatteryParameter::TEMPERATURE);
-    bool isSocOk = checkParameter(soc, socLimits, socWarningLimits, BatteryParameter::SOC);
-    bool isChargeRateOk = checkParameter(chargeRate, chargeRateLimits, chargeRateWarningLimits, BatteryParameter::CHARGE_RATE);
-
-    return isTemperatureOk && isSocOk && isChargeRateOk;
+bool checkTemperature(float temperature, BreachStatus& breachStatus, WarningStatus& warningStatus) {
+    ParameterRange temperatureRange = {0, 0 + 45 * 0.05, 45 - 45 * 0.05, 45};
+    warningStatus = getWarningStatus(temperature, temperatureRange);
+    breachStatus = getBreachStatus(temperature, temperatureRange);
+    return breachStatus == BreachStatus::NO_BREACH;
 }
 
-// Function to check both limits and warning limits for a parameter
-bool Battery::checkParameter(float value, BatteryLimits limits, BatteryWarningLimits warningLimits, BatteryParameter parameter) {
-    return isWithinLimits(value, limits, parameter) && isWithinWarningLimits(value, warningLimits, parameter);
+bool checkSoc(float soc, BreachStatus& breachStatus, WarningStatus& warningStatus) {
+    ParameterRange socRange = {20, 20 + 80 * 0.05, 80 - 80 * 0.05, 80};
+    warningStatus = getWarningStatus(soc, socRange);
+    breachStatus = getBreachStatus(soc, socRange);
+    return breachStatus == BreachStatus::NO_BREACH;
 }
 
-// Function to test the batteryIsOk function with various test cases
-void Battery::testBatteryIsOk() {
-    assert(batteryIsOk(25, 70, 0.7) == true);
-    assert(batteryIsOk(50, 85, 0) == false);
-    assert(batteryIsOk(-1, 70, 0.7) == false);
-    assert(batteryIsOk(25, 19, 0.7) == false);
-    assert(batteryIsOk(25, 70, 0.9) == false);
+bool checkChargeRate(float chargeRate, BreachStatus& breachStatus, WarningStatus& warningStatus) {
+    ParameterRange chargeRateRange = {0, 0 + 0.8 * 0.05, 0.8 - 0.8 * 0.05, 0.8};
+    warningStatus = getWarningStatus(chargeRate, chargeRateRange);
+    breachStatus = getBreachStatus(chargeRate, chargeRateRange);
+    return breachStatus == BreachStatus::NO_BREACH;
 }
+
+bool batteryIsOk(float temperature, float soc, float chargeRate) {
+    BreachStatus tempBreachStatus, socBreachStatus, chargeRateBreachStatus;
+    WarningStatus tempWarningStatus, socWarningStatus, chargeRateWarningStatus;
+
+    bool tempOk = checkTemperature(temperature, tempBreachStatus, tempWarningStatus);
+    bool socOk = checkSoc(soc, socBreachStatus, socWarningStatus);
+    bool chargeRateOk = checkChargeRate(chargeRate, chargeRateBreachStatus, chargeRateWarningStatus);
+
+    std::cout << statusToMessageTranslation("Temperature", tempBreachStatus, tempWarningStatus) << std::endl;
+    std::cout << statusToMessageTranslation("State of Charge", socBreachStatus, socWarningStatus) << std::endl;
+    std::cout << statusToMessageTranslation("Charge Rate", chargeRateBreachStatus, chargeRateWarningStatus) << std::endl;
+
+    return tempOk && socOk && chargeRateOk;
+}
+
