@@ -1,61 +1,101 @@
 #include "Checker.h"
 #include <gtest/gtest.h>
 
-// Test the Battery::isWithinLimits method
-TEST(BatteryTest, IsWithinLimits) {
-    Battery battery;
-    BatteryLimits limits{0, 45};
-    
-    EXPECT_TRUE(battery.isWithinLimits(25, limits, BatteryParameter::TEMPERATURE));
-    EXPECT_FALSE(battery.isWithinLimits(-1, limits, BatteryParameter::TEMPERATURE));
-    EXPECT_FALSE(battery.isWithinLimits(50, limits, BatteryParameter::TEMPERATURE));
+// Helper function to check status message translation
+std::string getStatusMessage(const std::string& parameter, float value, const ParameterRange& range) {
+    BreachStatus breachStatus = getBreachStatus(value, range);
+    WarningStatus warningStatus = getWarningStatus(value, range);
+    return statusToMessageTranslation(parameter, breachStatus, warningStatus);
 }
 
-// Test the Battery::isWithinWarningLimits method
-TEST(BatteryTest, IsWithinWarningLimits) {
-    Battery battery;
-    BatteryWarningLimits warningLimits{20, 40};
+TEST(BatteryParametersCheckTest, TestGetWarningStatus) {
+    ParameterRange range = {0, 2.25, 42.75, 45}; // Example ranges
 
-    EXPECT_TRUE(battery.isWithinWarningLimits(30, warningLimits, BatteryParameter::TEMPERATURE));
-    EXPECT_FALSE(battery.isWithinWarningLimits(15, warningLimits, BatteryParameter::TEMPERATURE));
-    EXPECT_FALSE(battery.isWithinWarningLimits(45, warningLimits, BatteryParameter::TEMPERATURE));
+    EXPECT_EQ(getWarningStatus(1.0f, range), WarningStatus::LOW_WARNING);
+    EXPECT_EQ(getWarningStatus(30.0f, range), WarningStatus::NO_WARNING);
+    EXPECT_EQ(getWarningStatus(46.0f, range), WarningStatus::HIGH_WARNING);
 }
 
-// Test the Battery::batteryIsOk method
-TEST(BatteryTest, BatteryIsOk) {
-    Battery battery;
+TEST(BatteryParametersCheckTest, TestGetBreachStatus) {
+    ParameterRange range = {0, 2.25, 42.75, 45}; // Example ranges
 
-    EXPECT_TRUE(battery.batteryIsOk(25, 70, 0.7));
-    EXPECT_FALSE(battery.batteryIsOk(50, 85, 0));
-    EXPECT_FALSE(battery.batteryIsOk(-1, 70, 0.7));
-    EXPECT_FALSE(battery.batteryIsOk(25, 19, 0.7));
-    EXPECT_FALSE(battery.batteryIsOk(25, 70, 0.9));
+    EXPECT_EQ(getBreachStatus(1.0f, range), BreachStatus::LOW_BREACH);
+    EXPECT_EQ(getBreachStatus(30.0f, range), BreachStatus::NO_BREACH);
+    EXPECT_EQ(getBreachStatus(46.0f, range), BreachStatus::HIGH_BREACH);
 }
 
-// Test the Battery::checkParameter method
-TEST(BatteryTest, CheckParameter) {
-    Battery battery;
-    BatteryLimits limits{0, 45};
-    BatteryWarningLimits warningLimits{20, 40};
+TEST(BatteryParametersCheckTest, TestStatusToMessageTranslation) {
+    ParameterRange range = {0, 2.25, 42.75, 45}; // Example ranges
 
-    EXPECT_TRUE(battery.checkParameter(30, limits, warningLimits, BatteryParameter::TEMPERATURE));
-    EXPECT_FALSE(battery.checkParameter(50, limits, warningLimits, BatteryParameter::TEMPERATURE));
-    EXPECT_FALSE(battery.checkParameter(10, limits, warningLimits, BatteryParameter::TEMPERATURE));
+    EXPECT_EQ(getStatusMessage("Temperature", 1.0f, range), "Temperature is below the safe range!");
+    EXPECT_EQ(getStatusMessage("Temperature", 30.0f, range), "Temperature is normal.");
+    EXPECT_EQ(getStatusMessage("Temperature", 46.0f, range), "Temperature is above the safe range!");
+
+    range = {20, 21.0, 79.0, 80}; // Different example ranges
+    EXPECT_EQ(getStatusMessage("State of Charge", 21.0f, range), "Warning: State of Charge is approaching discharge.");
+    EXPECT_EQ(getStatusMessage("State of Charge", 80.0f, range), "State of Charge is above the safe range!");
 }
 
-// Test the language setting and corresponding messages
-TEST(BatteryTest, LanguageSetting) {
-    Battery battery;
+TEST(BatteryParametersCheckTest, TestCheckTemperature) {
+    BreachStatus breachStatus;
+    WarningStatus warningStatus;
 
-    // Check default language (English)
-    EXPECT_EQ(battery.isWithinLimits(50, {0, 45}, BatteryParameter::TEMPERATURE), false);
+    EXPECT_TRUE(checkTemperature(25.0f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::NO_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
 
-    // Set to German and check messages
-    battery.setLanguage("German");
-    EXPECT_EQ(battery.isWithinLimits(50, {0, 45}, BatteryParameter::TEMPERATURE), false);
+    EXPECT_FALSE(checkTemperature(50.0f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::HIGH_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+
+    EXPECT_FALSE(checkTemperature(-10.0f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::LOW_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+}
+
+TEST(BatteryParametersCheckTest, TestCheckSoc) {
+    BreachStatus breachStatus;
+    WarningStatus warningStatus;
+
+    EXPECT_TRUE(checkSoc(50.0f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::NO_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+
+    EXPECT_FALSE(checkSoc(90.0f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::HIGH_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+
+    EXPECT_FALSE(checkSoc(10.0f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::LOW_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+}
+
+TEST(BatteryParametersCheckTest, TestCheckChargeRate) {
+    BreachStatus breachStatus;
+    WarningStatus warningStatus;
+
+    EXPECT_TRUE(checkChargeRate(0.4f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::NO_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+
+    EXPECT_FALSE(checkChargeRate(0.9f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::HIGH_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+
+    EXPECT_FALSE(checkChargeRate(-0.1f, breachStatus, warningStatus));
+    EXPECT_EQ(breachStatus, BreachStatus::LOW_BREACH);
+    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+}
+
+TEST(BatteryParametersCheckTest, TestBatteryIsOk) {
+    EXPECT_TRUE(batteryIsOk(25.0f, 50.0f, 0.4f));
+    EXPECT_FALSE(batteryIsOk(50.0f, 50.0f, 0.4f));
+    EXPECT_FALSE(batteryIsOk(25.0f, 90.0f, 0.4f));
+    EXPECT_FALSE(batteryIsOk(25.0f, 50.0f, 0.9f));
 }
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
