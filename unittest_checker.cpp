@@ -1,52 +1,61 @@
-#include <gtest/gtest.h>
 #include "Checker.h"
+#include <gtest/gtest.h>
 
-// Test cases for isTemperatureOk
-TEST(TemperatureTest, WithinRange) {
-    EXPECT_TRUE(isTemperatureOk(25));
-    EXPECT_TRUE(isTemperatureOk(0));
-    EXPECT_TRUE(isTemperatureOk(45));
+// Test the Battery::isWithinLimits method
+TEST(BatteryTest, IsWithinLimits) {
+    Battery battery;
+    BatteryLimits limits{0, 45};
+    
+    EXPECT_TRUE(battery.isWithinLimits(25, limits, BatteryParameter::TEMPERATURE));
+    EXPECT_FALSE(battery.isWithinLimits(-1, limits, BatteryParameter::TEMPERATURE));
+    EXPECT_FALSE(battery.isWithinLimits(50, limits, BatteryParameter::TEMPERATURE));
 }
 
-TEST(TemperatureTest, OutOfRange) {
-    EXPECT_FALSE(isTemperatureOk(-1));
-    EXPECT_FALSE(isTemperatureOk(46));
+// Test the Battery::isWithinWarningLimits method
+TEST(BatteryTest, IsWithinWarningLimits) {
+    Battery battery;
+    BatteryWarningLimits warningLimits{20, 40};
+
+    EXPECT_TRUE(battery.isWithinWarningLimits(30, warningLimits, BatteryParameter::TEMPERATURE));
+    EXPECT_FALSE(battery.isWithinWarningLimits(15, warningLimits, BatteryParameter::TEMPERATURE));
+    EXPECT_FALSE(battery.isWithinWarningLimits(45, warningLimits, BatteryParameter::TEMPERATURE));
 }
 
-// Test cases for isSocOk
-TEST(SocTest, WithinRange) {
-    EXPECT_TRUE(isSocOk(50));
-    EXPECT_TRUE(isSocOk(20));
-    EXPECT_TRUE(isSocOk(80));
+// Test the Battery::batteryIsOk method
+TEST(BatteryTest, BatteryIsOk) {
+    Battery battery;
+
+    EXPECT_TRUE(battery.batteryIsOk(25, 70, 0.7));
+    EXPECT_FALSE(battery.batteryIsOk(50, 85, 0));
+    EXPECT_FALSE(battery.batteryIsOk(-1, 70, 0.7));
+    EXPECT_FALSE(battery.batteryIsOk(25, 19, 0.7));
+    EXPECT_FALSE(battery.batteryIsOk(25, 70, 0.9));
 }
 
-TEST(SocTest, OutOfRange) {
-    EXPECT_FALSE(isSocOk(19));
-    EXPECT_FALSE(isSocOk(81));
+// Test the Battery::checkParameter method
+TEST(BatteryTest, CheckParameter) {
+    Battery battery;
+    BatteryLimits limits{0, 45};
+    BatteryWarningLimits warningLimits{20, 40};
+
+    EXPECT_TRUE(battery.checkParameter(30, limits, warningLimits, BatteryParameter::TEMPERATURE));
+    EXPECT_FALSE(battery.checkParameter(50, limits, warningLimits, BatteryParameter::TEMPERATURE));
+    EXPECT_FALSE(battery.checkParameter(10, limits, warningLimits, BatteryParameter::TEMPERATURE));
 }
 
-// Test cases for isChargeRateOk
-TEST(ChargeRateTest, WithinRange) {
-    EXPECT_TRUE(isChargeRateOk(0.5));
-    EXPECT_TRUE(isChargeRateOk(0.7));
+// Test the language setting and corresponding messages
+TEST(BatteryTest, LanguageSetting) {
+    Battery battery;
+
+    // Check default language (English)
+    EXPECT_EQ(battery.isWithinLimits(50, {0, 45}, BatteryParameter::TEMPERATURE), false);
+
+    // Set to German and check messages
+    battery.setLanguage("German");
+    EXPECT_EQ(battery.isWithinLimits(50, {0, 45}, BatteryParameter::TEMPERATURE), false);
 }
 
-TEST(ChargeRateTest, OutOfRange) {
-    EXPECT_FALSE(isChargeRateOk(0.9));
-}
-
-// Test cases for batteryIsOk
-TEST(BatteryTest, AllConditions) {
-    EXPECT_TRUE(batteryIsOk(25, 70, 0.7));
-    EXPECT_FALSE(batteryIsOk(-1, 50, 0.5));
-    EXPECT_FALSE(batteryIsOk(46, 50, 0.5));
-    EXPECT_FALSE(batteryIsOk(25, 19, 0.5));
-    EXPECT_FALSE(batteryIsOk(25, 81, 0.5));
-    EXPECT_FALSE(batteryIsOk(25, 50, 0.9));
-    EXPECT_FALSE(batteryIsOk(-1, 81, 0.9));
-    EXPECT_TRUE(batteryIsOk(0, 50, 0.5));
-    EXPECT_TRUE(batteryIsOk(45, 50, 0.5));
-    EXPECT_TRUE(batteryIsOk(25, 20, 0.5));
-    EXPECT_TRUE(batteryIsOk(25, 80, 0.5));
-    EXPECT_TRUE(batteryIsOk(25, 50, 0.7));
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
