@@ -97,10 +97,3 @@ void Battery::testBatteryIsOk() {
     assert(batteryIsOk(25, 19, 0.7) == false);
     assert(batteryIsOk(25, 70, 0.9) == false);
 }
-
-// Main function to run the test cases
-int main() {
-    Battery battery;
-    battery.testBatteryIsOk();
-    return 0;
-}
