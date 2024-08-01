@@ -35,11 +35,11 @@ TEST(BatteryParametersCheckTest, CheckTemperatureTest) {
 
     EXPECT_FALSE(checkTemperature(50.0f, breachStatus, warningStatus));
     EXPECT_EQ(breachStatus, BreachStatus::HIGH_BREACH);
-    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+    EXPECT_EQ(warningStatus, WarningStatus::HIGH_WARNING);
 
     EXPECT_FALSE(checkTemperature(-10.0f, breachStatus, warningStatus));
     EXPECT_EQ(breachStatus, BreachStatus::LOW_BREACH);
-    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+    EXPECT_EQ(warningStatus, WarningStatus::LOW_WARNING);
 }
 
 TEST(BatteryParametersCheckTest, CheckSocTest) {
@@ -52,11 +52,11 @@ TEST(BatteryParametersCheckTest, CheckSocTest) {
 
     EXPECT_FALSE(checkSoc(90.0f, breachStatus, warningStatus));
     EXPECT_EQ(breachStatus, BreachStatus::HIGH_BREACH);
-    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+    EXPECT_EQ(warningStatus, WarningStatus::HIGH_WARNING);
 
     EXPECT_FALSE(checkSoc(10.0f, breachStatus, warningStatus));
     EXPECT_EQ(breachStatus, BreachStatus::LOW_BREACH);
-    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+    EXPECT_EQ(warningStatus, WarningStatus::LOW_WARNING);
 }
 
 TEST(BatteryParametersCheckTest, CheckChargeRateTest) {
@@ -69,11 +69,11 @@ TEST(BatteryParametersCheckTest, CheckChargeRateTest) {
 
     EXPECT_FALSE(checkChargeRate(0.9f, breachStatus, warningStatus));
     EXPECT_EQ(breachStatus, BreachStatus::HIGH_BREACH);
-    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+    EXPECT_EQ(warningStatus, WarningStatus::HIGH_WARNING);
 
     EXPECT_FALSE(checkChargeRate(-0.1f, breachStatus, warningStatus));
     EXPECT_EQ(breachStatus, BreachStatus::LOW_BREACH);
-    EXPECT_EQ(warningStatus, WarningStatus::NO_WARNING);
+    EXPECT_EQ(warningStatus, WarningStatus::LOW_WARNING);
 }
 
 TEST(BatteryParametersCheckTest, BatteryIsOkTest) {
