@@ -3,42 +3,44 @@
 
 WarningStatus getWarningStatus(float value, const ParameterRange& range) {
     if (value < range.lowWarning) {
-        return LOW_WARNING;
+        return WarningStatus::LOW_WARNING;
     }
     if (value >= range.highWarning) {
-        return HIGH_WARNING;
+        return WarningStatus::HIGH_WARNING;
     }
-    return NO_WARNING; // Normal if not in any warning range
+    return WarningStatus::NO_WARNING; // Normal if not in any warning range
 }
 
 BreachStatus getBreachStatus(float value, const ParameterRange& range) {
     if (value < range.lowBreach) {
-        return LOW_BREACH;
+        return BreachStatus::LOW_BREACH;
     }
     if (value >= range.highBreach) {
-        return HIGH_BREACH;
+        return BreachStatus::HIGH_BREACH;
     }
-    return NO_BREACH; // Not in breach
+    return BreachStatus::NO_BREACH; // Not in breach
 }
 
 std::string getBreachMessage(const std::string& parameter, BreachStatus breachStatus) {
-    if (breachStatus == LOW_BREACH) {
-        return parameter + " is below the safe range!";
+    switch (breachStatus) {
+        case BreachStatus::LOW_BREACH:
+            return parameter + " is below the safe range!";
+        case BreachStatus::HIGH_BREACH:
+            return parameter + " is above the safe range!";
+        default:
+            return "";
     }
-    if (breachStatus == HIGH_BREACH) {
-        return parameter + " is above the safe range!";
-    }
-    return "";
 }
 
 std::string getWarningMessage(const std::string& parameter, WarningStatus warningStatus) {
-    if (warningStatus == LOW_WARNING) {
-        return "Warning: " + parameter + " is approaching discharge.";
+    switch (warningStatus) {
+        case WarningStatus::LOW_WARNING:
+            return "Warning: " + parameter + " is approaching discharge.";
+        case WarningStatus::HIGH_WARNING:
+            return "Warning: " + parameter + " is approaching charge-peak.";
+        default:
+            return "";
     }
-    if (warningStatus == HIGH_WARNING) {
-        return "Warning: " + parameter + " is approaching charge-peak.";
-    }
-    return "";
 }
 
 std::string statusToMessageTranslation(const std::string& parameter, BreachStatus breachStatus, WarningStatus warningStatus) {
@@ -53,24 +55,24 @@ std::string statusToMessageTranslation(const std::string& parameter, BreachStatu
 }
 
 bool checkTemperature(float temperature, BreachStatus& breachStatus, WarningStatus& warningStatus) {
-    ParameterRange temperatureRange = {0, 2.25, 42.75, 45};
+    ParameterRange temperatureRange = {0, 0 + 45 * 0.05, 45 - 45 * 0.05, 45};
     warningStatus = getWarningStatus(temperature, temperatureRange);
     breachStatus = getBreachStatus(temperature, temperatureRange);
-    return breachStatus == NO_BREACH;
+    return breachStatus == BreachStatus::NO_BREACH;
 }
 
 bool checkSoc(float soc, BreachStatus& breachStatus, WarningStatus& warningStatus) {
-    ParameterRange socRange = {20, 24, 76, 80};
+    ParameterRange socRange = {20, 20 + 80 * 0.05, 80 - 80 * 0.05, 80};
     warningStatus = getWarningStatus(soc, socRange);
     breachStatus = getBreachStatus(soc, socRange);
-    return breachStatus == NO_BREACH;
+    return breachStatus == BreachStatus::NO_BREACH;
 }
 
 bool checkChargeRate(float chargeRate, BreachStatus& breachStatus, WarningStatus& warningStatus) {
-    ParameterRange chargeRateRange = {0, 0.04, 0.76, 0.8};
+    ParameterRange chargeRateRange = {0, 0 + 0.8 * 0.05, 0.8 - 0.8 * 0.05, 0.8};
     warningStatus = getWarningStatus(chargeRate, chargeRateRange);
     breachStatus = getBreachStatus(chargeRate, chargeRateRange);
-    return breachStatus == NO_BREACH;
+    return breachStatus == BreachStatus::NO_BREACH;
 }
 
 bool batteryIsOk(float temperature, float soc, float chargeRate) {
