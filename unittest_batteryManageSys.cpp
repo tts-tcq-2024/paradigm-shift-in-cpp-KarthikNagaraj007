@@ -1,4 +1,4 @@
-#include "Checker.h"
+#include "batteryManageSys.h"
 #include <gtest/gtest.h>
 
 TEST(BatteryCheckTest, Temperature) {
