@@ -1,5 +1,5 @@
-#ifndef CHECKER_H
-#define CHECKER_H
+#ifndef BATTERYMANAGESYS_H
+#define BATTERYMANAGESYS_H
 
 #include <string>
 
@@ -37,4 +37,4 @@ bool checkChargeRate(float chargeRate, BreachStatus& breachStatus, WarningStatus
 // Function prototype for checking overall battery health
 bool batteryIsOk(float temperature, float soc, float chargeRate);
 
-#endif // CHECKER_H
+#endif // BATTERYMANAGESYS_H
